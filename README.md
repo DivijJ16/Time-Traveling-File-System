@@ -105,10 +105,10 @@ The system handles various error conditions appropriately:
 **Input**  
 ```txt
 CREATE notes
-INSERT notes Hello World
-SNAPSHOT notes "Initial version"
-INSERT notes Adding more content
-SNAPSHOT notes "Extended notes"
+INSERT notes Hello_World
+SNAPSHOT notes "Initial_version"
+INSERT notes Adding_more_content
+SNAPSHOT notes "Extended_notes"
 READ notes
 HISTORY notes
 RECENT_FILES 1
@@ -118,19 +118,17 @@ exit
 
 **Output (sample)**  
 ```txt
-File 'notes' created successfully
-Content inserted into 'notes'
-Snapshot created for 'notes' with message: Initial version
-Content inserted into 'notes'
-Snapshot created for 'notes' with message: Extended notes
-Current content of 'notes': Adding more content
-History of 'notes':
-[Version 0] (Snapshot) Message: Initial version
-[Version 1] (Snapshot) Message: Extended notes
-Most recent files:
+Adding_more_content
+Version_ID : 0, Created Timestamp : Fri Sep  5 23:36:21 2025
+, Message : this is a snapshot!
+Version_ID : 1, Created Timestamp : Fri Sep  5 23:36:21 2025
+, Message : "Initial_version"
+Version_ID : 2, Created Timestamp : Fri Sep  5 23:36:21 2025
+, Message : "Extended_notes"
+Most recently modified files:
 notes
-Largest version trees:
-notes (2 versions)
+Files with most versions:
+notes (versions: 3)
 exiting the loop. programme termninated
 ```
 
