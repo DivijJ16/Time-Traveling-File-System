@@ -13,16 +13,17 @@ This project implements a simplified, in-memory version control system inspired 
 - `hashmap_string<T>`: Hash map with string keys using the djb2 hash function
 - Provides O(1) average-time lookups for version management
 
+**Heap.hpp**
+- Custom implementation of a max heap data structure
+- Used for efficiently tracking system-wide metrics like most recently modified files and files with the most versions
+- Provides operations for building heaps, inserting elements, and extracting sorted results
+
 **Tree.hpp** 
 - Implements the version tree structure for individual files
 - Each tree node (`treenode`) represents a file version with content, timestamps, and parent-child relationships
 - The `tree` class manages the entire version history with operations for reading, inserting, updating, snapshotting, and rolling back
 - Maintains an active version pointer and tracks all versions through the hash map
 
-**Heap.hpp**
-- Custom implementation of a max heap data structure
-- Used for efficiently tracking system-wide metrics like most recently modified files and files with the most versions
-- Provides operations for building heaps, inserting elements, and extracting sorted results
 
 **System_Files.hpp**
 - Main system coordinator that manages multiple files
@@ -92,12 +93,35 @@ The program will start and wait for commands from standard input. You can either
 
 ## Error Handling
 
-The system handles various error conditions appropriately:
-- Attempting to create duplicate files
-- Operations on non-existent files
-- Rolling back to invalid version IDs
-- Taking snapshots of already snapshotted versions
-- Requesting more files than available in analytics
+The system implements comprehensive error handling for various invalid operations and inputs:
+
+### File Management Errors
+- **Duplicate File Creation**: `CREATE filename` throws `runtime_error("already a file with same name exists!")` if a file with the same name already exists
+- **Non-existent File Operations**: All file operations (`READ`, `INSERT`, `UPDATE`, `SNAPSHOT`, `ROLLBACK`, `HISTORY`) throw `runtime_error("no such file exists!")` when performed on files that don't exist
+
+### Version Control Errors  
+- **Invalid Version Rollback**: `ROLLBACK filename versionID` throws `runtime_error("This ID DNE!")` if the version ID is negative or greater than or equal to total versions
+- **Parent Rollback Error**: `ROLLBACK filename` (without version ID) throws `runtime_error("No parent exists!")` if attempting to rollback from the root version which has no parent
+- **Double Snapshot Error**: `SNAPSHOT filename message` throws `runtime_error("already a snapshot!")` if attempting to snapshot a version that is already marked as a snapshot
+
+### Input Parsing and Validation Errors
+- **Empty Filename**: `CREATE` command throws `runtime_error("Invalid CREATE")` if filename is empty
+- **Invalid ROLLBACK Format**: ROLLBACK command throws various errors:
+  - `runtime_error("invalid command : filename required!!")` if no filename is provided
+  - `runtime_error("Invalid version ID : must be a number!!")` if version ID contains non-numeric characters
+  - `runtime_error("Invalid command format!!")` if more than 2 arguments are provided
+- **Invalid Command**: Any unrecognized command throws `runtime_error("Invalid inp")`
+
+### System Analytics Errors
+- **Insufficient Files for RECENT_FILES**: `RECENT_FILES num` throws `runtime_error("these many files aren't even available!")` if requesting more files than exist in the system
+- **Insufficient Files for BIGGEST_TREES**: `BIGGEST_TREES num` throws `runtime_error("these many files aren't even available!")` if requesting more files than exist in the system
+- **Heap Overflow**: Max heap operations throw `runtime_error("Heap is empty!")` when attempting to pop from or get top of an empty heap
+- **Invalid Heap Size Request**: Heap's `getSorted(k)` throws `runtime_error("these many nodes do not exist!!!!")` if k exceeds heap size
+
+### Memory and Data Structure Errors
+- The system gracefully handles hash map collisions through chaining
+- Proper memory management prevents memory leaks through destructors
+- All pointer operations are validated before access to prevent segmentation faults
 
 
 ## 🖥️ Example Session  
