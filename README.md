@@ -8,19 +8,19 @@ This project implements a simplified, in-memory version control system inspired 
 ### Core Files
 
 **Hash_Map.hpp**
-- Contains custom implementations of hash maps for both integer and string keys
+- Contains implementations of hash maps for both integer and string keys
 - `hashmap_int<T>`: Hash map with integer keys using simple modulo hashing
 - `hashmap_string<T>`: Hash map with string keys using the djb2 hash function
 - Provides O(1) average-time lookups for version management
 
 **Heap.hpp**
-- Custom implementation of a max heap data structure
-- Used for efficiently tracking system-wide metrics like most recently modified files and files with the most versions
-- Provides operations for building heaps, inserting elements, and extracting sorted results
+- Implementation of a max heap data structure.
+- Used for effeciently tracking system-wide metrics like most recently modified files and files with the most versions
+- Contains operations for building heaps, inserting elements and popping the max element.
 
 **Tree.hpp** 
 - Implements the version tree structure for individual files
-- Each tree node (`treenode`) represents a file version with content, timestamps, and parent-child relationships
+- Each tree node (`treenode`) represents a file version with content, timestamps, and parent-child relationships.
 - The `tree` class manages the entire version history with operations for reading, inserting, updating, snapshotting, and rolling back
 - Maintains an active version pointer and tracks all versions through the hash map
 
@@ -33,28 +33,27 @@ This project implements a simplified, in-memory version control system inspired 
 
 **IO_Parser.cpp**
 - Main entry point and command parser
-- Reads commands from standard input and routes them to appropriate system functions
+- Reads commands from standard input and sends them to appropriate system functions
 - Supports all specified commands with proper input parsing and error handling
 
-## Compilation Instructions
 
-To compile the project, run the following command in your terminal:
-
+## Compilation
+Run : 
 ```bash
-g++ -o file_system IO_Parser.cpp
+chmod +x bash.sh
+```
+in the terminal followed by :
+```bash
+./bash.sh
 ```
 
-Make sure all header files (Hash_Map.hpp, Tree.hpp, Heap.hpp, System_Files.hpp) are in the same directory as IO_Parser.cpp.
-
-## Running the Program
-
-After compilation, run the executable:
-
+### Execution
+On successful compilation run :
 ```bash
-./file_system
+./tt_file_system
 ```
 
-The program will start and wait for commands from standard input. You can either type commands interactively or redirect input from a file.
+The program will start and wait for commands from standard input. 
 
 ## Supported Commands
 
@@ -72,7 +71,70 @@ The program will start and wait for commands from standard input. You can either
 - `BIGGEST_TREES <num>` - Lists files with the most versions
 
 ### Exit
-- `exit` - Terminates the program
+- `EXIT` - Terminates the program
+
+
+## Error Handling
+
+The system implements comprehensive error handling for various invalid operations and inputs:
+
+### File Management Errors
+- **Duplicate File Creation**: `CREATE filename` throws `runtime_error("already a file with same name exists!")` if a file with the same name already exists
+- **Non-existent File Operations**: All file operations (`READ`, `INSERT`, `UPDATE`, `SNAPSHOT`, `ROLLBACK`, `HISTORY`) throw `runtime_error("no such file exists!")` when performed on files that don't exist
+
+### Version Control Errors  
+- **Invalid Version Rollback**: `ROLLBACK filename versionID` throws `runtime_error("This ID DNE!")` if the version ID is negative or greater than or equal to total versions
+- **Parent Rollback Error**: `ROLLBACK filename` (without version ID) throws `runtime_error("No parent exists!")` if attempting to rollback from the root version which has no parent
+- **Double Snapshot Error**: `SNAPSHOT filename message` throws `runtime_error("already a snapshot!")` if attempting to snapshot a version that is already marked as a snapshot
+
+### Input Parsing and Validation Errors
+- **Invalid ROLLBACK Format**: ROLLBACK command throws various errors:
+  - `runtime_error("invalid command : filename required!!")` if no filename is provided
+  - `runtime_error("Invalid version ID : must be a number!!")` if version ID contains non-numeric characters
+  - `runtime_error("Invalid command format!!")` if more than 2 arguments are provided
+- **Invalid Numeric Arguments**: 
+  - `RECENT_FILES` throws `runtime_error("Invalid input : must be a number!!")` if the number argument contains non-numeric characters
+  - `BIGGEST_TREES` throws `runtime_error("Invalid input : must be a number!!")` if the number argument contains non-numeric characters
+- **Invalid Command**: Any unrecognized command throws `runtime_error("Invalid inp")`
+
+### System Analytics Errors
+- **Insufficient Files for RECENT_FILES**: `RECENT_FILES num` throws `runtime_error("these many files aren't even available!")` if requesting more files than exist in the system
+- **Insufficient Files for BIGGEST_TREES**: `BIGGEST_TREES num` throws `runtime_error("these many files aren't even available!")` if requesting more files than exist in the system
+- **Heap Overflow**: Max heap operations throw `runtime_error("Heap is empty!")` when attempting to pop from or get top of an empty heap
+
+
+
+##  Example Session  
+
+**Input**  
+```txt
+CREATE notes
+INSERT notes Hello_World
+SNAPSHOT notes "Initial_version"
+INSERT notes Adding_more_content
+SNAPSHOT notes "Extended_notes"
+READ notes
+HISTORY notes
+RECENT_FILES 1
+BIGGEST_TREES 1
+EXIT
+```
+
+**Output (sample)**  
+```txt
+Adding_more_content
+Version_ID : 2, Snapshotted Timestamp : Mon Sep  8 17:32:55 2025
+, Message : "Extended_notes"
+Version_ID : 1, Snapshotted Timestamp : Mon Sep  8 17:32:55 2025
+, Message : "Initial_version"
+Version_ID : 0, Snapshotted Timestamp : Mon Sep  8 17:32:55 2025
+, Message : this is a snapshot!
+Most recently modified files:
+notes
+Files with most versions:
+notes (versions: 3)
+Exiting the Loop. Programme Termninated
+```
 
 ## Key Features and Semantics
 
@@ -90,78 +152,3 @@ The program will start and wait for commands from standard input. You can either
 - Hash maps provide O(1) average lookup time for versions
 - Heaps enable efficient sorting for system analytics
 - Tree structure allows for natural parent-child version relationships
-
-## Error Handling
-
-The system implements comprehensive error handling for various invalid operations and inputs:
-
-### File Management Errors
-- **Duplicate File Creation**: `CREATE filename` throws `runtime_error("already a file with same name exists!")` if a file with the same name already exists
-- **Non-existent File Operations**: All file operations (`READ`, `INSERT`, `UPDATE`, `SNAPSHOT`, `ROLLBACK`, `HISTORY`) throw `runtime_error("no such file exists!")` when performed on files that don't exist
-
-### Version Control Errors  
-- **Invalid Version Rollback**: `ROLLBACK filename versionID` throws `runtime_error("This ID DNE!")` if the version ID is negative or greater than or equal to total versions
-- **Parent Rollback Error**: `ROLLBACK filename` (without version ID) throws `runtime_error("No parent exists!")` if attempting to rollback from the root version which has no parent
-- **Double Snapshot Error**: `SNAPSHOT filename message` throws `runtime_error("already a snapshot!")` if attempting to snapshot a version that is already marked as a snapshot
-
-### Input Parsing and Validation Errors
-- **Empty Filename**: `CREATE` command throws `runtime_error("Invalid CREATE")` if filename is empty
-- **Invalid ROLLBACK Format**: ROLLBACK command throws various errors:
-  - `runtime_error("invalid command : filename required!!")` if no filename is provided
-  - `runtime_error("Invalid version ID : must be a number!!")` if version ID contains non-numeric characters
-  - `runtime_error("Invalid command format!!")` if more than 2 arguments are provided
-- **Invalid Command**: Any unrecognized command throws `runtime_error("Invalid inp")`
-
-### System Analytics Errors
-- **Insufficient Files for RECENT_FILES**: `RECENT_FILES num` throws `runtime_error("these many files aren't even available!")` if requesting more files than exist in the system
-- **Insufficient Files for BIGGEST_TREES**: `BIGGEST_TREES num` throws `runtime_error("these many files aren't even available!")` if requesting more files than exist in the system
-- **Heap Overflow**: Max heap operations throw `runtime_error("Heap is empty!")` when attempting to pop from or get top of an empty heap
-- **Invalid Heap Size Request**: Heap's `getSorted(k)` throws `runtime_error("these many nodes do not exist!!!!")` if k exceeds heap size
-
-### Memory and Data Structure Errors
-- The system gracefully handles hash map collisions through chaining
-- Proper memory management prevents memory leaks through destructors
-- All pointer operations are validated before access to prevent segmentation faults
-
-
-## 🖥️ Example Session  
-
-**Input**  
-```txt
-CREATE notes
-INSERT notes Hello_World
-SNAPSHOT notes "Initial_version"
-INSERT notes Adding_more_content
-SNAPSHOT notes "Extended_notes"
-READ notes
-HISTORY notes
-RECENT_FILES 1
-BIGGEST_TREES 1
-exit
-```
-
-**Output (sample)**  
-```txt
-Adding_more_content
-Version_ID : 0, Created Timestamp : Fri Sep  5 23:36:21 2025
-, Message : this is a snapshot!
-Version_ID : 1, Created Timestamp : Fri Sep  5 23:36:21 2025
-, Message : "Initial_version"
-Version_ID : 2, Created Timestamp : Fri Sep  5 23:36:21 2025
-, Message : "Extended_notes"
-Most recently modified files:
-notes
-Files with most versions:
-notes (versions: 3)
-exiting the loop. programme termninated
-```
-
-
-## Technical Implementation Notes
-
-- All data structures are implemented from scratch without using STL containers
-- Memory management is handled through proper allocation and deallocation
-- Timestamps use chrono library for precise time tracking
-- String parsing handles edge cases with whitespace and empty inputs
-
-The system provides a solid foundation for understanding version control concepts while demonstrating practical applications of fundamental data structures.
